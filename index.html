@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maya - Interactive AI Concierge</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(23, 32, 54, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-blue: #00d2ff;
+            --accent-purple: #9d4edd;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --status-green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Widescreen Kiosk Container */
+        .kiosk-container {
+            display: grid;
+            grid-template-rows: 70px 1fr 100px;
+            height: 100vh;
+            width: 100vw;
+            background: radial-gradient(circle at 50% 20%, #1a233a 0%, #0b0f19 80%);
+            padding: 24px;
+            gap: 20px;
+        }
+
+        /* Header Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 0 28px;
+            backdrop-filter: blur(12px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 14px;
+            height: 14px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-blue);
+        }
+
+        .brand-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--status-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--status-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--status-green);
+        }
+
+        /* Main Display Area (Split View) */
+        main {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        /* Avatar Video Viewport */
+        .avatar-viewport {
+            position: relative;
+            background: #000;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Simulated Video Stream Placeholder */
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #121829 0%, #080b12 100%);
+        }
+
+        .avatar-glow {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,210,255,0.25) 0%, rgba(157,78,221,0.05) 70%, transparent 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulse 4s infinite ease-in-out;
+        }
+
+        .avatar-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+        }
+
+        /* Floating Captions Overlay */
+        .caption-overlay {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 20px 28px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .caption-text {
+            font-size: 1.35rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            font-weight: 400;
+        }
+
+        /* Interactive Side Panel */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .panel-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        /* Quick Action Buttons */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(0, 210, 255, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .action-btn span {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        /* Audio Waveform Container */
+        .waveform-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 60px;
+        }
+
+        .wave-bar {
+            width: 5px;
+            height: 10px;
+            background: var(--accent-blue);
+            border-radius: 3px;
+            animation: wave 1.2s infinite ease-in-out;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+
+        /* Footer Controls */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 0 28px;
+            backdrop-filter: blur(12px);
+        }
+
+        .mic-control-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--accent-blue), #0077ff);
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .mic-control-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Keyframe Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 0.9; }
+        }
+
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 45px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="kiosk-container">
+        <!-- Top Navigation Header -->
+        <header>
+            <div class="brand">
+                <div class="brand-logo"></div>
+                <div class="brand-title">Maya Concierge</div>
+            </div>
+            <div class="system-status">
+                <span id="clock-display">12:00 PM</span>
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    System Ready
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Display Viewport -->
+        <main>
+            <!-- Left Side: Interactive Video/Avatar Viewport -->
+            <div class="avatar-viewport">
+                <!-- Video stream element placeholder (Replace src with real WebRTC or HeyGen stream) -->
+                <!-- <video id="avatar-video" autoplay playsinline class="avatar-video"></video> -->
+                
+                <div class="avatar-placeholder" id="avatar-placeholder">
+                    <div class="avatar-glow">
+                        <div class="avatar-icon">M</div>
+                    </div>
+                </div>
+
+                <!-- Floating Spoken Captions -->
+                <div class="caption-overlay">
+                    <div class="caption-text" id="caption-text">
+                        Hello! Welcome. How can I assist you today?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Interactive Controls & Information -->
+            <div class="side-panel">
+                <!-- Audio Activity Card -->
+                <div class="panel-card">
+                    <div class="panel-title">Voice Activity</div>
+                    <div class="waveform-container">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Action Options -->
+                <div class="panel-card quick-actions">
+                    <button class="action-btn" onclick="triggerAction('Building Directions')">
+                        <span>🗺️</span>
+                        Directions
+                    </button>
+                    <button class="action-btn" onclick="triggerAction('Today\'s Schedule')">
+                        <span>📅</span>
+                        Schedule
+                    </button>
+                    <button class="action-btn" onclick="triggerAction('Directory Search')">
+                        <span>🔍</span>
+                        Directory
+                    </button>
+                    <button class="action-btn" onclick="triggerAction('Live Support')">
+                        <span>🎧</span>
+                        Assistance
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Status Bar -->
+        <footer>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">
+                Tap screen or speak to interact with Maya
+            </div>
+            <button class="mic-control-btn" onclick="toggleMicrophone()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                Tap to Speak
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        // Real-time Clock Function
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock-display').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Interactive Button Handler
+        function triggerAction(actionName) {
+            const captionBox = document.getElementById('caption-text');
+            captionBox.textContent = `Sure, I can help you with ${actionName.toLowerCase()}. One moment please.`;
+        }
+
+        // Toggle Mic Interaction Placeholder
+        let isListening = false;
+        function toggleMicrophone() {
+            isListening = !isListening;
+            const captionBox = document.getElementById('caption-text');
+            if (isListening) {
+                captionBox.textContent = "Listening to you...";
+            } else {
+                captionBox.textContent = "How else can I help you today?";
+            }
+        }
+    </script>
+</body>
+</html>
